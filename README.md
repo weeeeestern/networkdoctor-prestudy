@@ -38,3 +38,35 @@ We learn the fundamentals of Go syntax and programming patterns that can later b
 ├─ 03-kernel-metrics/
 ├─ 04-go-basics/
 └─ archive/
+```
+---
+## 브랜치 규칙
+
+- `main` 브랜치에는 직접 push하지 않습니다.
+- 모든 작업은 각자 작업 브랜치를 만들어 진행합니다.
+- 작업이 끝나면 Pull Request(PR)를 생성한 뒤 merge합니다.
+
+### 브랜치 이름 규칙
+```text
+study/eunseo-week01
+
+study/donguk-week01
+
+study/seoyeong-week01
+```
+## 작업 방법
+
+1. main 브랜치 최신 내용을 pull 받습니다. 
+2. 자신의 작업 브랜치를 생성합니다. 
+3. 해당 주차 폴더에 본인 파일을 작성합니다. 
+4. commit 후 원격 브랜치로 push합니다. 
+5. GitHub에서 PR을 생성합니다.
+
+## PR 제목 Convention
+[Week01] 은서 - Kubernetes 네트워크 문제 사례 조사
+
+[Week01] 동욱 - 리눅스 로컬 네트워크 문제 분석
+
+[Week01] 서영 - 커널 메트릭 수집 사례 정리
+
+[Week01] 은서 - Go 기본 문법 정리
