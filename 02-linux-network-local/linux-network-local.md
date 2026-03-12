@@ -1,31 +1,32 @@
 # [Week01] 네트워크 기초 조사 내용 - 동욱
 
 ## 1. 오늘 조사한 주제
-- Linux network troubleshooting
+- Linux 네트워크 트러블슈팅(문제 해결)
 
 ## 2. 조사 내용 요약
-- To troubleshoot Linux network latency, use ping and mtr for RTT/packet loss diagnostics, traceroute to identify slow hops, dig for DNS speed checks, and tcpdump for packet analysis. Common fixes include analyzing network paths, checking for saturation, and optimizing TCP buffers or disabling CPU power-saving C-states. 
+Linux 네트워크 지연 문제를 진단 및 해결하는 방법에는 여러 가지가 있다.
+ping과 mtr을 사용하여 RTT/패킷 손실을 진단하고, traceroute를 통해 지연이 발생하는 홉(hop)을 식별하며, dig를 사용해 DNS 속도를 확인하고, tcpdump로 패킷을 분석한다. 
+일반적인 해결 방법으로는 네트워크 경로 분석, 대역폭 포화(saturation) 상태 확인, TCP 버퍼 최적화, CPU 절전 C-state 비활성화 등이 있다.
 
-Key Tools and Techniques
+주요 도구 및 기술
 
-Ping (ping <IP>): Basic check for round-trip time (RTT) and packet loss.
-MTR (mtr <IP>): Combines traceroute and ping to identify exactly which node is causing high latency.
-Traceroute (traceroute <IP>): Maps the network path to detect slow, intermediate routers.
-Tcpdump (tcpdump -i eth0): Captures traffic to identify network bottlenecks.
-Dig (dig <domain>): Tests DNS resolution speed. 
+Ping : 왕복 지연 시간(RTT) 및 패킷 손실에 대한 기본적인 확인.
+MTR (MyTraceRoute) : traceroute와 ping을 결합하여 어느 노드에서 높은 지연이 발생하는지 정확히 식별.
+Traceroute: 네트워크 경로를 매핑하여 속도가 느린 중간 라우터를 감지.
+Tcpdump (tcpdump -i eth0): 트래픽을 캡처하여 네트워크 병목 현상을 파악.
+Dig (domain) : DNS 확인(분석) 속도를 테스트.
 
-Common Causes and Fixes
+주요 원인 및 해결 방법
 
-High Traffic/Congestion: Check for saturated links.
-Pathing Issues: Use mtr to detect routing changes.
-CPU Power Saving: Disable C-states to improve network latency. - 얘는 빼도 될듯함 (최저 성능이 아닌 최고 성능을 위한 것)
-Configuration Errors: Check for mismatched MTU sizes or bad cabling.
-Buffer Tuning: Tune net.core.rmem_max and net.core.wmem_max. 
+높은 트래픽/혼잡: 포화된 링크(대역폭)가 있는지 확인.
+경로 문제: mtr을 사용하여 라우팅 변경 사항을 감지.
+CPU 절전 모드: 네트워크 지연 시간을 개선하기 위해 C-state를 비활성화. - cpu 절전 모드를 없애는 것
+구성 오류: MTU 크기 불일치 또는 불량 케이블 확인.
+버퍼 튜닝: net.core.rmem_max 및 net.core.wmem_max 값을 조정.
 
-System Monitoring
+시스템 모니터링
 
-Use top or htop to check if high server load is causing slow application response.
-Utilize {Link: Site24x7 tools https://www.site24x7.com/learn/linux/network-performance-troubleshooting.html} for in-depth analysis. 
+top 또는 htop을 사용하여 서버 부하가 높아 애플리케이션 응답이 느려지는지 확인. -> 향후 cilium 통합 예정
 
 ## 3. 참고 자료 (Links)
 - [wafaicloud](https://wafaicloud.com/blog/troubleshooting-slow-ssh-connections-in-linux/)
@@ -39,41 +40,3 @@ Utilize {Link: Site24x7 tools https://www.site24x7.com/learn/linux/network-perfo
 - [scaler] (https://www.scaler.com/topics/linux-for-networking/)
 
 - [리눅스네트워크커맨드시트] (https://www.geeksforgeeks.org/linux-unix/linux-network-commands-cheat-sheet/)
-
-
-## 다음 조사
-## Linux network troubleshooting
-
-- Linux network troubleshooting involves checking physical connectivity, IP configuration (ip a), DNS settings, and routing (ip route) using command-line tools. Key diagnostics include testing connectivity with ping, tracing paths with mtr or traceroute, and inspecting traffic with ss, netstat, or wireshark. Logs in /var/log/syslog and dmesg are crucial for identifying errors. 
-
-Essential Troubleshooting Steps
-Physical/Link Layer: Check cable connections and link lights. Use ip link show to verify the interface is "UP".
-IP Configuration: Verify the interface has an IP address using ip addr show.
-Local Connectivity: Ping the localhost (ping 127.0.0.1) and the local default gateway to isolate issues to the machine or the network.
-DNS Resolution: Test if domain names resolve using dig or nslookup.
-Routing: View the routing table with ip route to check default gateway configuration.
-Service/Port Status: Check if a service is listening on a port using ss -tulpn or netstat -tulpn. 
-
-Common Command-Line Tools
-ip (iproute2): Modern tool for interface (ip a), routing (ip r), and link (ip l) management.
-ping: Tests connectivity to a host.
-mtr / traceroute: Diagnoses network path, latency, and packet loss.
-ss / netstat: Examines socket connections.
-nmcli: Manages NetworkManager on RHEL/CentOS/Fedora.
-tcpdump / wireshark: Captures and analyzes network packets. 
-
-Common Issues & Solutions
-Firewall Blocking: Check iptables -L or ufw status for restricted traffic.
-Interface Down: Bring up an interface with sudo ip link set <interface> up.
-MTU Issues: If packets drop, check and adjust the Maximum Transmission Unit (MTU) with ip link set dev <interface> mtu <size>.
-Restart Services: Restart network services using sudo systemctl restart NetworkManager or networking
-
-- https://unix.stackexchange.com/questions/50098/linux-network-troubleshooting-and-debugging#:~:text=Here%20are%20some%20tips%20for%20troubleshooting%20and,%60openssl%60%20*%20%60wireshark%60%20*%20%60iftop%60%20*%20%60iptstate%60
-- https://www.reddit.com/r/linuxquestions/comments/1f7ob2m/how_do_i_troubleshoot_network_problems_on_linux/
-- https://www.facebook.com/groups/2249498416/posts/10164525101148417/
-- https://cycle.io/learn/troubleshooting-linux-networking
-- https://www.redhat.com/en/blog/beginners-guide-network-troubleshooting-linux#:~:text=This%20article%20covers%20basic%20network%20troubleshooting%20using,address%60%20command%20*%20**Layer%204:%20Transport%20layer**
-- https://www.linuxjournal.com/content/troubleshooting-network-problems#:~:text=If%20you%20can't%20reach%20a%20network%20resource%2C,resource%2C%20you%20probably%20have%20a%20networking%20problem
-- https://help.automox.com/hc/en-us/articles/31580375076628-Troubleshooting-Connection-Issues-on-Linux
-- https://www.freecodecamp.org/news/how-troubleshoot-network-on-linux/
-
