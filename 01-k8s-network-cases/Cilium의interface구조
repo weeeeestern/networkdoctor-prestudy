@@ -1,0 +1,53 @@
+# Cilium의 인터페이스 구조
+
+```bash
+root@control-plane:~# ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether fa:16:3e:8a:23:27 brd ff:ff:ff:ff:ff:ff
+    altname enp0s3
+    altname ens3
+    inet 192.168.0.74/24 metric 100 brd 192.168.0.255 scope global dynamic eth0
+       valid_lft 30269sec preferred_lft 30269sec
+    inet6 fe80::f816:3eff:fe8a:2327/64 scope link 
+       valid_lft forever preferred_lft forever
+3: cilium_net@cilium_host: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether fa:2a:80:33:99:8f brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::f82a:80ff:fe33:998f/64 scope link 
+       valid_lft forever preferred_lft forever
+4: cilium_host@cilium_net: <BROADCAST,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 7e:a0:9a:49:cb:a4 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.1.172/32 scope global cilium_host
+       valid_lft forever preferred_lft forever
+    inet6 fe80::7ca0:9aff:fe49:cba4/64 scope link 
+       valid_lft forever preferred_lft forever
+5: cilium_vxlan: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/ether 96:da:24:14:68:36 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::94da:24ff:fe14:6836/64 scope link 
+       valid_lft forever preferred_lft forever
+9: lxc_health@if8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether ea:7f:03:b1:47:e6 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet6 fe80::e87f:3ff:feb1:47e6/64 scope link 
+       valid_lft forever preferred_lft forever
+```
+
+### `cilium_host` & `cilium_net`
+
+- 서로 연결된 Veth Pair
+- `veth`의 한쪽 끝을 파드 안에 넣는 일반적인 CNI와 달리 둘다 호스트 네임스페이스에 존재한다.
+- `cilium_host` : IP(10.0.1.172)를 가지고 있어 파드들의 **디폴트 게이트웨이** 역할을 합니다.
+- `cilium_net` : IP가 없으며, 주로 eBPF 프로그램이 패킷을 가로채거나 전달하는 통로로 사용됨
+
+### Pod는 어디에 연결되는가
+
+- Cilium은 각 파드마다 별도의 `lxcXXXX` (또는 `vethXXXX`)라는 인터페이스를 생성
+- Pod 안에는 `eth0` 인터페이스가 존재하고, host쪽에는 `lxcXXXX`
+인터페이스가 대응된다 → veth pair 구조
+    - 일반적인 cni와 다른 점은  `lxcXXXX` 인터페이스들이 공중에 떠 있고, 그 자리에 eBPF 프로그램이 붙어서 패킷을 감시하고 배달
+- eBPF가 `lxcXXXX`
+에서 올라오는 패킷을 가로채서 `cilium_host`나 `cilium_vxlan`으로 바로 던져버린다.
