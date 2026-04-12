@@ -14,6 +14,8 @@ We use this repo to:
 - upload weekly study results individually
 
 ## Study Topics
+<img width="1320" height="762" alt="image" src="https://github.com/user-attachments/assets/ad368a50-f633-4351-aa68-ca8ea2bcc8d1" />
+
 
 ### 1. Kubernetes network issue cases
 We investigate common network-related incidents in Kubernetes environments and summarize symptoms, causes, diagnostics, and possible solutions.
