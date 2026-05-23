@@ -2,3 +2,7 @@
 *.iml
 .DS_Store
 Thumbs.db
+.gocache/
+.gomodcache/
+*.o
+*.ll

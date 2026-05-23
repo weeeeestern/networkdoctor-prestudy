@@ -141,7 +141,14 @@ incident
 ```text
 .
 ├─ .github/
+├─ bpf/
+│  └─ networkdoctor.bpf.c
+├─ cmd/
+│  └─ networkdoctor-agent/
+│     └─ main.go
 ├─ prestudy/
+├─ go.mod
+├─ go.sum
 └─ README.md
 ```
 
