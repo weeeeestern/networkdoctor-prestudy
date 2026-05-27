@@ -526,16 +526,13 @@ static __always_inline void nd_inc_udp_counter(__u32 field_id)
         c->long_flow_total++;
 }
 
-static __always_inline void nd_submit_event_with_pid(__u32 type,
-                                                     const struct nd_flow4_key *flow,
-                                                     __u64 value_us,
-                                                     __u64 aux,
-                                                     __u32 pid)
+static __always_inline void nd_fill_event(struct nd_event *e,
+                                          __u32 type,
+                                          const struct nd_flow4_key *flow,
+                                          __u64 value_us,
+                                          __u64 aux,
+                                          __u32 pid)
 {
-    struct nd_event *e = bpf_ringbuf_reserve(&nd_events, sizeof(*e), 0);
-    if (!e)
-        return;
-
     e->type = type;
     e->pid = pid;
     e->ts_ns = bpf_ktime_get_ns();
@@ -554,8 +551,6 @@ static __always_inline void nd_submit_event_with_pid(__u32 type,
         e->src_port = flow->src_port;
         e->dst_port = flow->dst_port;
     }
-
-    bpf_ringbuf_submit(e, 0);
 }
 
 static __always_inline void nd_submit_event(__u32 type,
@@ -563,8 +558,13 @@ static __always_inline void nd_submit_event(__u32 type,
                                             __u64 value_us,
                                             __u64 aux)
 {
-    nd_submit_event_with_pid(type, flow, value_us, aux,
-                             (__u32)(bpf_get_current_pid_tgid() >> 32));
+    struct nd_event *e = bpf_ringbuf_reserve(&nd_events, sizeof(*e), 0);
+    if (!e)
+        return;
+
+    nd_fill_event(e, type, flow, value_us, aux,
+                  (__u32)(bpf_get_current_pid_tgid() >> 32));
+    bpf_ringbuf_submit(e, 0);
 }
 
 static __always_inline void nd_submit_event_no_pid(__u32 type,
@@ -572,7 +572,12 @@ static __always_inline void nd_submit_event_no_pid(__u32 type,
                                                    __u64 value_us,
                                                    __u64 aux)
 {
-    nd_submit_event_with_pid(type, flow, value_us, aux, 0);
+    struct nd_event *e = bpf_ringbuf_reserve(&nd_events, sizeof(*e), 0);
+    if (!e)
+        return;
+
+    nd_fill_event(e, type, flow, value_us, aux, 0);
+    bpf_ringbuf_submit(e, 0);
 }
 
 static __always_inline int nd_is_ipv4_sock(const struct sock *sk)
