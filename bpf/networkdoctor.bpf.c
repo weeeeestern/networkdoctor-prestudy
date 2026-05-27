@@ -526,17 +526,18 @@ static __always_inline void nd_inc_udp_counter(__u32 field_id)
         c->long_flow_total++;
 }
 
-static __always_inline void nd_submit_event(__u32 type,
-                                            const struct nd_flow4_key *flow,
-                                            __u64 value_us,
-                                            __u64 aux)
+static __always_inline void nd_submit_event_with_pid(__u32 type,
+                                                     const struct nd_flow4_key *flow,
+                                                     __u64 value_us,
+                                                     __u64 aux,
+                                                     __u32 pid)
 {
     struct nd_event *e = bpf_ringbuf_reserve(&nd_events, sizeof(*e), 0);
     if (!e)
         return;
 
     e->type = type;
-    e->pid = (__u32)(bpf_get_current_pid_tgid() >> 32);
+    e->pid = pid;
     e->ts_ns = bpf_ktime_get_ns();
     e->ifindex = 0;
     e->src_ip = 0;
@@ -555,6 +556,23 @@ static __always_inline void nd_submit_event(__u32 type,
     }
 
     bpf_ringbuf_submit(e, 0);
+}
+
+static __always_inline void nd_submit_event(__u32 type,
+                                            const struct nd_flow4_key *flow,
+                                            __u64 value_us,
+                                            __u64 aux)
+{
+    nd_submit_event_with_pid(type, flow, value_us, aux,
+                             (__u32)(bpf_get_current_pid_tgid() >> 32));
+}
+
+static __always_inline void nd_submit_event_no_pid(__u32 type,
+                                                   const struct nd_flow4_key *flow,
+                                                   __u64 value_us,
+                                                   __u64 aux)
+{
+    nd_submit_event_with_pid(type, flow, value_us, aux, 0);
 }
 
 static __always_inline int nd_is_ipv4_sock(const struct sock *sk)
@@ -876,7 +894,7 @@ static __always_inline int nd_parse_ipv4_udp(struct __sk_buff *skb,
             __u32 b = nd_log2_bucket(dur_us);
             nd_inc_u64_percpu_array(&nd_udp_duration_us_hist, b);
             nd_inc_udp_counter(1); /* long_flow_total */
-            nd_submit_event(ND_EVT_LONG_UDP_FLOW, &flow, dur_us, uv->packets);
+            nd_submit_event_no_pid(ND_EVT_LONG_UDP_FLOW, &flow, dur_us, uv->packets);
             uv->last_event_ns = now;
         }
     }
@@ -929,7 +947,7 @@ static __always_inline int nd_parse_ipv4_udp(struct __sk_buff *skb,
             nd_inc_u64_percpu_array(&nd_dns_rcode_total, rk);
             if (rcode != 0) {
                 nd_inc_dns_counter(2); /* rcode_error_total */
-                nd_submit_event(ND_EVT_DNS_RCODE_ERROR, &flow, rcode, 0);
+                nd_submit_event_no_pid(ND_EVT_DNS_RCODE_ERROR, &flow, rcode, 0);
             }
         }
 
@@ -946,7 +964,7 @@ static __always_inline int nd_parse_ipv4_udp(struct __sk_buff *skb,
 
             if (latency_us >= cfg.slow_dns_us) {
                 nd_inc_dns_counter(3); /* slow_total */
-                nd_submit_event(ND_EVT_SLOW_DNS, &flow, latency_us, rcode);
+                nd_submit_event_no_pid(ND_EVT_SLOW_DNS, &flow, latency_us, rcode);
             }
 
             bpf_map_delete_elem(&nd_dns_pending, &key);
