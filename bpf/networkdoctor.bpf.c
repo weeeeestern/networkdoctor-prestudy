@@ -394,6 +394,11 @@ struct {
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 20);
+    /*
+     * Ring buffer maps don't use key/value layout at runtime, but bpf2go needs
+     * this BTF hint to generate the userspace Go type for struct nd_event.
+     */
+    __type(value, struct nd_event);
 } nd_events SEC(".maps");
 
 /* ----------------------------- helpers ------------------------------ */
@@ -549,7 +554,7 @@ static __always_inline void nd_submit_event(__u32 type,
         e->dst_port = flow->dst_port;
     }
 
-    bpf_ringbuf_commit(e, 0);
+    bpf_ringbuf_submit(e, 0);
 }
 
 static __always_inline int nd_is_ipv4_sock(const struct sock *sk)
